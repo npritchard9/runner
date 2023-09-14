@@ -1,0 +1,30 @@
+// Prevents additional console window on Windows in release, DO NOT REMOVE!!
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+
+use chrono::NaiveTime;
+use surrealdb::{engine::local::Db, Surreal};
+use tauri::State;
+
+pub struct AppState(pub Surreal<Db>);
+
+#[tauri::command]
+async fn save_run(distance: u8, time: NaiveTime, state: State<'_, AppState>) -> Result<(), ()> {
+    let run = Run { distance, time };
+    let _r = insert_run(run, &state.0).await.unwrap();
+    Ok(())
+}
+
+#[tauri::command]
+async fn get_runs(state: State<'_, AppState>) -> Result<Vec<DBRun>, ()> {
+    let runs = get_all_runs(&state.0).await.unwrap();
+    Ok(runs)
+}
+
+fn main() {
+    let db = tauri::async_runtime::block_on(get_db()).unwrap();
+    tauri::Builder::default()
+        .manage(AppState(db))
+        .invoke_handler(tauri::generate_handler![save_run, get_runs])
+        .run(tauri::generate_context!())
+        .expect("error while running tauri application");
+}
