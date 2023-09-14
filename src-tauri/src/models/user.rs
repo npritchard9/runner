@@ -1,4 +1,3 @@
-use chrono::NaiveTime;
 use serde::{Deserialize, Serialize};
 use surrealdb::sql::Thing;
 

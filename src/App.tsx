@@ -7,15 +7,22 @@ function App() {
   const [distance, setDistance] = createSignal(0);
   const [time, setTime] = createSignal("");
   const [runs, setRuns] = createSignal<VecRun>([]);
+  const [weeklyRuns, setWeeklyRuns] = createSignal<VecRun>([]);
   async function saveRun() {
     await invoke("save_run", { distance: distance(), time: time() });
     setDistance(0);
     setTime("");
     getRuns();
+    getWeeklyRuns();
   }
   async function getRuns() {
     let runs: VecRun = await invoke("get_runs", {});
     setRuns(runs);
+  }
+
+  async function getWeeklyRuns() {
+    let runs: VecRun = await invoke("get_weekly_runs", {});
+    setWeeklyRuns(runs);
   }
 
   return (
@@ -45,6 +52,7 @@ function App() {
         Save Run
       </button>
       <For each={runs()}>{(run) => <RunInfo {...run} />}</For>
+      <For each={weeklyRuns()}>{(run) => <RunInfo {...run} />}</For>
     </div>
   );
 }

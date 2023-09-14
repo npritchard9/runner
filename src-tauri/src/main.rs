@@ -5,6 +5,11 @@ use chrono::NaiveTime;
 use surrealdb::{engine::local::Db, Surreal};
 use tauri::State;
 
+use runner::{
+    db::*,
+    models::{run::*, user::*},
+};
+
 pub struct AppState(pub Surreal<Db>);
 
 #[tauri::command]
@@ -20,11 +25,22 @@ async fn get_runs(state: State<'_, AppState>) -> Result<Vec<DBRun>, ()> {
     Ok(runs)
 }
 
+#[tauri::command]
+async fn get_weekly_runs(state: State<'_, AppState>) -> Result<Vec<DBRun>, ()> {
+    let runs = get_weekly_stats(&state.0).await.unwrap();
+    dbg!(&runs);
+    Ok(runs)
+}
+
 fn main() {
     let db = tauri::async_runtime::block_on(get_db()).unwrap();
     tauri::Builder::default()
         .manage(AppState(db))
-        .invoke_handler(tauri::generate_handler![save_run, get_runs])
+        .invoke_handler(tauri::generate_handler![
+            save_run,
+            get_runs,
+            get_weekly_runs
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
