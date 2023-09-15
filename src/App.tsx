@@ -1,9 +1,11 @@
-import { For, createSignal } from "solid-js";
+import { For, Show, createSignal } from "solid-js";
 import { invoke } from "@tauri-apps/api/tauri";
+import { Login } from "./components/login";
 
 type VecRun = Array<{ distance: number; time: string }>;
 
 function App() {
+  const [user, setUser] = createSignal<string>("");
   const [distance, setDistance] = createSignal(0);
   const [time, setTime] = createSignal("");
   const [runs, setRuns] = createSignal<VecRun>([]);
@@ -27,6 +29,9 @@ function App() {
 
   return (
     <div class="h-screen w-screen flex flex-col justify-center items-center gap-2">
+      <Show when={user()} fallback={<Login setUser={setUser} />}>
+        <div>{user()}</div>
+      </Show>
       <label for="dist">Distance</label>
       <input
         type="numeric"

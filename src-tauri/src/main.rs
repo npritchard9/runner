@@ -2,7 +2,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use chrono::NaiveTime;
-use surrealdb::{engine::local::Db, Surreal};
+use surrealdb::{engine::local::Db, opt::auth::Jwt, Surreal};
 use tauri::State;
 
 use runner::{
@@ -32,6 +32,18 @@ async fn get_weekly_runs(state: State<'_, AppState>) -> Result<Vec<DBRun>, ()> {
     Ok(runs)
 }
 
+#[tauri::command]
+async fn signup(credentials: Credentials<'_>, state: State<'_, AppState>) -> Result<Jwt, ()> {
+    let token = sign_up_user(&state.0, credentials).await.unwrap();
+    Ok(token)
+}
+
+#[tauri::command]
+async fn login(credentials: Credentials<'_>, state: State<'_, AppState>) -> Result<Jwt, ()> {
+    let token = sign_in_user(&state.0, credentials).await.unwrap();
+    Ok(token)
+}
+
 fn main() {
     let db = tauri::async_runtime::block_on(get_db()).unwrap();
     tauri::Builder::default()
@@ -39,7 +51,9 @@ fn main() {
         .invoke_handler(tauri::generate_handler![
             save_run,
             get_runs,
-            get_weekly_runs
+            get_weekly_runs,
+            signup,
+            login
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

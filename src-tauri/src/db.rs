@@ -1,5 +1,5 @@
 use chrono::Utc;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use surrealdb::engine::local::{Db, SpeeDb};
 use surrealdb::opt::auth::{Jwt, Scope};
 use surrealdb::sql::Value;
@@ -10,6 +10,14 @@ use super::models::{run::*, user::*};
 pub async fn get_db() -> surrealdb::Result<Surreal<Db>> {
     let db = Surreal::new::<SpeeDb>("/Users/noahpritchard/Documents/rust/runner/runs.db").await?;
     db.use_ns("my_ns").use_db("my_db").await?;
+    db.query(
+        "DEFINE SCOPE account SESSION 1w
+	SIGNUP ( CREATE user SET email = $email, pass = crypto::argon2::generate($pass) )
+	SIGNIN ( SELECT * FROM user WHERE email = $email AND crypto::argon2::compare(pass, $pass) )
+",
+    )
+    .await
+    .unwrap();
     Ok(db)
 }
 
@@ -33,7 +41,7 @@ pub async fn get_weekly_stats(db: &Surreal<Db>) -> surrealdb::Result<Vec<DBRun>>
     Ok(runs)
 }
 
-#[derive(Serialize)]
+#[derive(Deserialize, Serialize)]
 pub struct Credentials<'a> {
     email: &'a str,
     pass: &'a str,
@@ -47,7 +55,7 @@ pub async fn sign_up_user(
         .signup(Scope {
             namespace: "my_ns",
             database: "my_db",
-            scope: "user",
+            scope: "account",
             params: credentials,
         })
         .await?;
@@ -62,7 +70,7 @@ pub async fn sign_in_user(
         .signin(Scope {
             namespace: "my_ns",
             database: "my_db",
-            scope: "user",
+            scope: "account",
             params: credentials,
         })
         .await?;
