@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/tauri";
-import { Setter, createSignal } from "solid-js";
+import { Setter, Show, createSignal } from "solid-js";
 
 type LoginProps = {
   setUser: Setter<string>;
@@ -8,15 +8,22 @@ type LoginProps = {
 export function Login(props: LoginProps) {
   const [email, setEmail] = createSignal("");
   const [password, setPassword] = createSignal("");
+  const [newUser, setNewUser] = createSignal(false);
 
-  async function login_user() {
+  async function loginUser() {
     let token: String = await invoke("login", {
       credentials: { email: email(), pass: password() },
     });
     console.log(token);
   }
+  async function signUpUser() {
+    let token: String = await invoke("signup", {
+      credentials: { email: email(), pass: password() },
+    });
+    console.log(token);
+  }
   return (
-    <div class="flex flex-col items-center justify-center gap-4">
+    <div class="flex flex-col items-center justify-center gap-2">
       <input
         placeholder="Email"
         value={email()}
@@ -29,14 +36,44 @@ export function Login(props: LoginProps) {
         oninput={(e) => setPassword(e.currentTarget.value)}
         class="rounded-xl px-2 py-4 text-black"
       />
-      <button
-        onclick={() => {
-          props.setUser(email());
-          login_user();
-        }}
+      <Show
+        when={!newUser()}
+        fallback={
+          <div class="flex flex-col items-center justify-center gap-2">
+            <button
+              onclick={() => {
+                props.setUser(email());
+                signUpUser();
+              }}
+            >
+              Sign Up
+            </button>
+            <button
+              onclick={() => {
+                setNewUser(false);
+              }}
+            >
+              Back to Login
+            </button>
+          </div>
+        }
       >
-        Log in
-      </button>
+        <button
+          onclick={() => {
+            props.setUser(email());
+            loginUser();
+          }}
+        >
+          Log In
+        </button>
+        <button
+          onclick={() => {
+            setNewUser(true);
+          }}
+        >
+          Create an Account
+        </button>
+      </Show>
     </div>
   );
 }
